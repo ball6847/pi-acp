@@ -203,3 +203,15 @@ Project layout:
 ## License
 
 MIT (see [LICENSE](LICENSE)).
+
+## Vibe Kanban fork notes
+
+This fork adds a compatibility shim (`src/acp/set-model-shim.ts`) that keeps the legacy
+`session/set_model` request working. Clients that were built against older ACP SDKs — Vibe Kanban, which uses the Rust
+`agent-client-protocol` 0.8 — switch models with `session/set_model`, but current SDKs only dispatch
+`session/set_config_option`, so those clients previously received `Method not found`. The shim rewrites the request into
+config-option calls and answers the client once they complete.
+
+`modelId` may carry a thinking level as a `provider/model:level` suffix (for example `kimi-coding/k3:xhigh`); the shim splits
+it off and applies it through the `thought_level` option. Levels pi does not accept for the chosen model are ignored by pi
+itself.

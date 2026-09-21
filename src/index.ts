@@ -1,4 +1,5 @@
 import { AgentSideConnection, ndJsonStream } from '@agentclientprotocol/sdk'
+import { withSetModelShim } from './acp/set-model-shim.js'
 import { PiAcpAgent } from './acp/agent.js'
 import { getPiCommand, shouldUseShellForPiCommand } from './pi-rpc/command.js'
 // Terminal Auth entrypoint. The ACP client launches the agent with `--terminal-login`.
@@ -47,7 +48,11 @@ const output = new ReadableStream<Uint8Array>({
   }
 })
 
-const stream = ndJsonStream(input, output)
+// Older clients (such as Vibe Kanban's Rust `agent-client-protocol` 0.8) switch
+// models with `session/set_model`, which current SDKs no longer dispatch.
+const shimmed = withSetModelShim(message => `${JSON.stringify(message)}\n`.trimEnd(), output, input)
+
+const stream = ndJsonStream(shimmed.fromAgent, shimmed.toAgent)
 
 const agent = new AgentSideConnection(conn => new PiAcpAgent(conn), stream)
 
